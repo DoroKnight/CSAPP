@@ -1,0 +1,24 @@
+# long absSum(long *start, long count) 
+# start in %rdi, count in %rsi
+# Use condition-jump
+absSum:
+    irmovq  $8, %r8     # Constant 8
+    irmovq  $1, %r9     # Constant 1
+    xorq    %rax, %rax  # sum = 0
+    andq    %rsi, %rsi  # Set CC
+    jmp test            # Goto test
+loop:
+    mrmovq  (%rdi), %r10    # Get *start
+    andq    %r10, %r10      # Check if positive
+    jge NONNEG
+    irmovq  $0, %r11
+    subq    %r10, %r11
+    rrmovq  %r11, %r10
+NONNEG:
+    addq    %r10, %rax      # Add to sum
+    addq    %r8, %rdi       # start ++
+    subq    %r9, %rsi       # count --, Set CC
+test:
+    jne loop            # Stop when 0
+    ret
+    

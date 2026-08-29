@@ -1,0 +1,19 @@
+# long rsum(long *start, long count)
+# start in %rdi, count in %rsi
+rsum:
+    andq    %rsi, %rsi      # Check if the count > 0
+    jle RECURSION_OVER
+    pushq   %rbx
+    mrmovq  (%rdi), %rbx
+    irmovq  $8, %r8
+    irmovq  $1, %r9
+    subq    %r9, %rsi
+    addq    %r8, %rdi
+    call    rsum
+    addq    %rbx, %rax
+    popq    %rbx
+    ret
+RECURSION_OVER:
+    irmovq  $0, %rax        # Begin compute result
+    ret
+    

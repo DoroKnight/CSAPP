@@ -1,0 +1,15 @@
+# long sum(long *start, long count)
+# start in %rdi, count in %rsi
+sum:
+    xorq    %rax, %rax     # sum = 0
+    andq    %rsi, %rsi     # Set CC
+    jmp     test           # Goto test
+loop:
+    mrmovq  (%rdi), %r8    # Get *start
+    addq    %r8, %rax      # Add to sum
+    iaddq   $8, %rdi       # start + 1
+    iaddq   $-1, %rsi      # count - 1
+test:
+    jne     loop           # Stop when count = 0
+    ret
+    
