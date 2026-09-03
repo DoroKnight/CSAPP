@@ -1,0 +1,10 @@
+irmovq  $1, %rax
+xorq    %rbx, %rbx
+jne     target
+halt
+target:
+ret
+rrmovq  %rbx, %rax
+
+# Handle control logic correctly 
+# and drop ret on error path

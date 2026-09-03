@@ -1,0 +1,6 @@
+irmovq  $10, %rax
+irmovq  $3,  %rbx
+xorq    %rcx, %rcx
+cmovne  %rbx, %rax      # ne failed, shouldn't cmov.
+addq    %rax, %rdx      # Read %rax immdietely
+halt
