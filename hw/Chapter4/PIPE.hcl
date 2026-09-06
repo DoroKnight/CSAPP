@@ -48,3 +48,52 @@ word m_stat = [
     dmem_error : SADR;      # Data's address wrong
     1: M_stat;              # Default: inherit command's status.
 ]
+
+# Pipeline control logic
+# F_stall:
+bool F_stall = 
+        # Conditions for a load/use hazard
+        E_icode in { IMRMOVQ, IPOPQ } &&
+        E_dstM in { d_srcA, d_srcB } ||
+        # Stalling at fetch while ret passes through pipeline
+        IRET in { D_icode, E_icode, M_icode };
+
+# D_stall:
+bool D_stall = 
+        # Conditions for a load/use hazard
+        E_icode in { IMRMOVQ, IPOPQ } &&
+        E_dstM in { d_srcA, d_srcB }
+
+# D_bubble:
+bool D_bubble = 
+        # Mispredicted branch
+        (E_icode == IJXX && !e_Cnd) ||
+        # Stalling at fetch while ret passes through pipeline
+        # but not condition for a load/use hazard
+        !(E_icode in {IMRMOVQ, IPOPQ} && E_dstM in {d_srcA, d_srcB}) &&
+        IRET in {D_icode, E_icode, M_icode};
+
+# E_bubble:
+bool E_bubble = 
+        # Bubble at fetch while ret passes through pipeline 
+        (E_icode == IJXX && !e_Cnd) ||
+        # or in condition for a load/use hazard
+        E_icode in {IMRMOVQ, IPOPQ} && E_dstM in {d_srcA, d_scrB};
+
+# set_cc:
+bool set_cc =
+        # Only in case of OP and no exception
+        E_icode == IOPQ && 
+        !m_stat in {SINS, SADR, SHLT} &&
+        !W_stat in {SINS, SADR, SHLT};
+
+# M_bubble
+bool M_bubble = 
+        # Only in case of exceptions
+        m_stat in {SINS, SADR, SHLT} ||
+        W_stat in {SINS, SADR, SHLT};
+
+# W_stall:
+bool W_stall = 
+        # Only in case of W_stat is exception
+        W_stat in {SINS, SADR, SHLT};
