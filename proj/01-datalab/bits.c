@@ -143,7 +143,8 @@ NOTES:
  *   Rating: 1
  */
 int bitXor(int x, int y) {
-  return 2;
+    // Use De Morgan's laws to convert the OR operation
+    return ~(~(x & ~y) & ~(~x & y));      
 }
 /* 
  * tmin - return minimum two's complement integer 
@@ -152,9 +153,8 @@ int bitXor(int x, int y) {
  *   Rating: 1
  */
 int tmin(void) {
-
-  return 2;
-
+    // 000...0 -> 111...1 -> 100...0
+    return (~0) << 31;        
 }
 //2
 /*
@@ -165,7 +165,8 @@ int tmin(void) {
  *   Rating: 1
  */
 int isTmax(int x) {
-  return 2;
+    // exclude -1: !!(~x)
+    return !(~x ^ (x + 1)) & !!(~x);
 }
 /* 
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
@@ -176,7 +177,11 @@ int isTmax(int x) {
  *   Rating: 2
  */
 int allOddBits(int x) {
-  return 2;
+    x = x & (x >> 16);
+    x = x & (x >> 8);
+    x = x & (x >> 4);
+    x = x & (x >> 2);
+    return x >> 1 & 0x1;
 }
 /* 
  * negate - return -x 
@@ -186,7 +191,8 @@ int allOddBits(int x) {
  *   Rating: 2
  */
 int negate(int x) {
-  return 2;
+    // The conception of 2s complement
+    return ~x + 1;
 }
 //3
 /* 
@@ -199,7 +205,12 @@ int negate(int x) {
  *   Rating: 3
  */
 int isAsciiDigit(int x) {
-  return 2;
+    int signX = x >> 31;
+    int NegMin = ~(0x30) + 1;    // -0x30
+    int NegX = ~x + 1;    // -x
+    int flag1 = (x + NegMin) >> 31;      // Whether x >= 0x30
+    int flag2 = (0x39 + NegX) >> 31;      // Whether x <= 0x39
+    return ~signX & ~flag1 & ~flag2 & 0x1;
 }
 /* 
  * conditional - same as x ? y : z 
@@ -209,7 +220,21 @@ int isAsciiDigit(int x) {
  *   Rating: 3
  */
 int conditional(int x, int y, int z) {
-  return 2;
+    // Declare the variable first.
+    int flag;
+
+    // First， determine whether x is 0.
+    x = x | (x << 16);
+    x = x | (x << 8);
+    x = x | (x << 4);
+    x = x | (x << 2);
+    x = x | (x << 1);   // If x != 0, the MSB is 1, otherwise 0
+
+    flag = x >> 31; // If x != 0, the flag is 0xFFFF, otherwise 0
+
+    // If the x == 0, y & flag = 0 and z & flag = z
+    // Otherwise, y & flag = y and z & flag = 0
+    return (y & flag) + (z & ~flag);
 }
 /* 
  * isLessOrEqual - if x <= y  then return 1, else return 0 
@@ -219,7 +244,23 @@ int conditional(int x, int y, int z) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) {
-  return 2;
+    // If x < 0 and y >= 0, return 1
+    // If x >= 0 and y < 0, return 0;
+    int Xsign = x >> 31;
+    int Ysign = y >> 31;
+    int signXor = (~Xsign & Ysign) | (~Ysign & Xsign);
+
+    // If x >= 0 and y >= 0, (y-x >= 0) => return 1
+    int Neg_X = ~x + 1;
+    int sign = (y + Neg_X) >> 31;
+    int LOE = ~signXor & ~sign;
+
+    // If x < 0 and y < 0:
+    // if x = INT_MIN: return 1
+    int IsIntMin = Xsign & (x & (~x + 1) >> 31);
+    // if x != INT_MIN, same as the case2
+
+    return (IsIntMin | (signXor & Xsign) | LOE) & 0x1;
 }
 //4
 /* 
@@ -231,7 +272,15 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4 
  */
 int logicalNeg(int x) {
-  return 2;
+    // If x != 0, there exists at least one 1.
+    x = x | (x >> 16);
+    x = x | (x >> 8);
+    x = x | (x >> 4);
+    x = x | (x >> 2);
+    x = x | (x >> 1);
+
+    // If the x != 0, the LSB will be 1.
+    return ~x & 0x1;
 }
 /* howManyBits - return the minimum number of bits required to represent x in
  *             two's complement
@@ -246,7 +295,32 @@ int logicalNeg(int x) {
  *  Rating: 4
  */
 int howManyBits(int x) {
-  return 0;
+    int sign = x >> 31;
+    int b16, b8, b4, b2, b1, b0;
+
+    /* 正数保持不变，负数按位取反 */
+    x = x ^ sign;
+
+    /* 二分查找最高有效位 */
+    b16 = !!(x >> 16) << 4;
+    x = x >> b16;
+
+    b8 = !!(x >> 8) << 3;
+    x = x >> b8;
+
+    b4 = !!(x >> 4) << 2;
+    x = x >> b4;
+
+    b2 = !!(x >> 2) << 1;
+    x = x >> b2;
+
+    b1 = !!(x >> 1);
+    x = x >> b1;
+
+    b0 = x;
+
+    /* 最高有效位位置，加上符号位 */
+    return b16 + b8 + b4 + b2 + b1 + b0 + 1;
 }
 //float
 /* 
@@ -261,7 +335,36 @@ int howManyBits(int x) {
  *   Rating: 4
  */
 unsigned floatScale2(unsigned uf) {
-  return 2;
+    // Declare the variable first.
+    unsigned sign = uf >> 31;
+    unsigned exponent = uf >> 23 & 0xFF;
+    unsigned significand = uf << 9 >> 9;
+    unsigned MSBofSignificand;
+    unsigned mask;
+    unsigned result;
+
+    // uf is NaN.
+    if (exponent == 0xFF && significand != 0) return uf;
+
+    // uf is +INF or -INF:
+    if (exponent == 0xFF) return uf;
+
+    // uf is denormalized.
+    if (exponent == 0) {
+        MSBofSignificand = significand >> 22;
+        if (MSBofSignificand != 0) {
+            exponent += 1;
+        }
+        mask = -1;
+        significand = significand << 1 & (mask >> 9);
+    } else {
+        // uf is normalized.
+        exponent += 1;
+        if (exponent == 0xFF) return (0xFF << 23) + (sign << 31);
+    }
+
+    result = (sign << 31) + (exponent << 23) + significand;
+    return result;
 }
 /* 
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
@@ -276,7 +379,35 @@ unsigned floatScale2(unsigned uf) {
  *   Rating: 4
  */
 int floatFloat2Int(unsigned uf) {
-  return 2;
+    unsigned sign = uf >> 31;
+    unsigned exponent = uf >> 23 & 0xFF;
+    unsigned significand = uf << 9 >> 9;
+    unsigned extra_one, M, Bias, E;
+    int offset, result;
+
+    // If uf is NaN or infinity, return 0x80000000u
+    if (exponent == 0xff) return 0x1 << 31;
+
+    // If uf is denormalized, directly return 0
+    // Because the biggest denormalized float is also too small.
+    if (exponent == 0) return 0;
+
+    // uf is normalized.
+    // First, get the correct format of significand
+    extra_one = 0x1 << 23;
+    M = extra_one + significand;
+    Bias = 0x7F;
+    if (exponent < Bias) return 0;      // Too small
+
+    E = exponent - Bias;
+    if (E > 31)     return 0x1 << 31;
+
+    offset = 23 - E;
+    if (offset < 0) result = M << -offset;
+    else result = M >> offset;
+
+    if (sign != 0) result = -result;
+    return result;
 }
 /* 
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
@@ -292,5 +423,25 @@ int floatFloat2Int(unsigned uf) {
  *   Rating: 4
  */
 unsigned floatPower2(int x) {
-    return 2;
+    int Bias = 0x7F;
+    unsigned pos_INF = 0xFF << 23;
+
+    int minExp = 1 - Bias;
+    int maxExp = 0xFE;
+    int exponent;
+
+    // Too small to be represented as a denorm, return 0
+    if (x < 0 && x < minExp) return 0;
+
+    // Too large, return +INF
+    if (x > maxExp - Bias) return pos_INF;
+
+    // if x is denormalized:
+    if (x >= minExp && x < minExp + 23) {
+        return 0x1 << (x - minExp);
+    } else {
+        // if x is normalized:
+        exponent = x + Bias;
+        return exponent << 23;
+    }
 }
