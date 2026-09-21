@@ -1,0 +1,78 @@
+# Phase 1:
+# The function calls 'string_length' and 'strings_not_equal'.
+# 'strings_not_equal()' returns an int; the 1st argument is the user input,
+# and the 2nd is the reference string.
+# Solution:
+Border relations with Canada have never been better.
+
+# Phase 2:
+# Calls 'read_six_numbers' to parse user input.
+# Requires six integers following a geometric progression (each element is 2x the previous).
+# Solution:
+1 2 4 8 16 32
+
+# Phase 3:
+# Implements a switch statement via a jump table.
+# Requires two integers:
+# - The 1st is the switch case index/label.
+# - The 2nd is the target value checked in GDB for that corresponding case.
+# Solution:
+1 311  # (Note: 0x137 in decimal is 311; verify whether your bomb expects hex or dec)
+
+# Phase 4:
+# Involves a recursive function ('func4') that must return 0.
+# Requires two integers; the 2nd integer must be 0.
+# Warning: An incorrect input may trigger infinite recursion and lead to a stack overflow.
+# Solution:
+7 0
+
+# Phase 5:
+# Requires a 6-character string.
+# The low 4 bits of each character (c & 0xF) are used as indices into a lookup table.
+# Lookup table: "maduiersnfotvbylSo"
+# Target output: "flyers"
+# Solution:
+# (Find characters whose ASCII values mod 16 yield inthe target indices, e.g., '9'->9='f', etc.)
+# e.g., "ionefg" (depending on your specific bomb's mapping)
+
+# Phase 6:
+# Requires 6 distinct integers ranging from 1 to 6 (no duplicates allowed).
+# Logic in disassembly:
+# 1. Transforms each input number via `7 - x`.
+# 2. Uses these transformed values as indices to traverse linked list nodes (table base: 0x6032d0).
+# 3. Validates that the node values are sorted in descending order (reverse order).
+# (Note: Cast to `(int *)` when inspecting the node values in GDB).
+# Solution:
+# (e.g., 4 3 2 1 6 5 — depending on node values in your binary)
+
+# Secret Phase:
+# Entry condition in 'phase_defused':
+# After six input lines, reparses the Phase 4 input with "%d %d %s".
+# The extra string must match "DrEvil", so use "7 0 DrEvil" for Phase 4.
+# After Phase 6 is defused, 'secret_phase' reads an additional input line.
+# Calls 'strtol(input, NULL, 10)' to convert this line to a decimal integer.
+# For ordinary int inputs, the range check requires 1 <= input <= 1001.
+# Calls 'fun7' with the tree root at 0x6030f0; the return value must be 2.
+# Node layout: value at +0 (4 bytes), left pointer at +8, right pointer at +16.
+# The pointers form a binary search tree: smaller values on the left, larger on the right.
+# Relevant nodes (decimal):
+#       36
+#      /  \
+#     8    50
+#    / \
+#   6   22
+#      /  \
+#     20  35
+# Logic in 'fun7':
+# 1. A NULL node returns -1.
+# 2. If input < node value, returns 2 * fun7(left, input).
+# 3. If input == node value, returns 0.
+# 4. If input > node value, returns 2 * fun7(right, input) + 1.
+# For input 22, the search follows 36 -> left to 8 -> right to 22.
+# Return values are calculated from the deepest call back to the root:
+# - At 22: equal, returns 0.
+# - At 8: right branch, returns 2 * 0 + 1 = 1.
+# - At 36: left branch, returns 2 * 1 = 2, satisfying the check.
+# (Note: 20 also works; the extra left branch at 22 returns 2 * 0 = 0.)
+# Solution:
+22
